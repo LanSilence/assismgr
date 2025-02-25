@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统监控助手</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --background: #1A1A1A;
+            --card-bg: #2D2D2D;
+            --text-primary: #FFFFFF;
+            --card-min-width: 480px;
+            --chart-height: 300px;
+            --card-padding: 25px;
+            --title-font-size: 1.5rem;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .dashboard {
+            display: grid;
+            max-width: 1200px;
+            margin: 0 auto;
+            grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width), 1fr));
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: var(--card-padding);
+            min-height: 400px;
+        }
+
+        .card-title {
+            color: var(--primary-color);
+            font-size: var(--title-font-size);
+            margin-bottom: 25px;
+        }
+
+        .wifi-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .wifi-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .wifi-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-chart {
+            margin-top: 15px;
+            height: var(--chart-height);
+        }
+
+        .connect-form {
+            display: none;
+            margin-top: 15px;
+            
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: white;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+        /* 新增响应式调整 */
+        @media (max-width: 768px) {
+            :root {
+                --card-min-width: 100%;
+                --chart-height: 250px;
+                --card-padding: 20px;
+                --title-font-size: 1.3rem;
+            }
+            
+            .dashboard {
+                padding: 15px;
+            }
+        }
+        
+        /* 放大WiFi列表项 */
+        .wifi-item {
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        /* 放大输入框和按钮 */
+        input[type="password"] {
+            padding: 12px;
+            font-size: 1rem;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+        }
+        
+        .wifi-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ssid {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .signal::before {
+            content: "📶 ";
+        }
+
+        .encryption::before {
+            content: "🔒 ";
+        }
+        .wifi-item {
+            position: relative;
+            margin-bottom: 5px; /* 为输入框留出空间 */
+        }
+
+        .input-container {
+            display: none;
+            position: relative;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0 0 8px 8px;
+            margin-top: -5px; /* 消除项间距 */
+        }
+
+        .input-visible {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- 系统监控卡片 -->
+        <div class="card">
+            <h2 class="card-title">系统状态</h2>
+            <div class="metric-chart">
+                <canvas id="metricsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Wi-Fi 管理卡片 -->
+        <div class="card">
+            <h2 class="card-title">Wi-Fi 管理</h2>
+            <button onclick="scanWifi()">扫描网络</button>
+            <ul class="wifi-list" id="wifiList">
+
+            </ul>
+            <div class="connect-form" id="connectForm">
+                <input type="password" id="wifiPassword" placeholder="输入密码">
+                <button onclick="connectWifi()">连接</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // 图表初始化
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CPU 使用率',
+                    data: [],
+                    borderColor: '#4CAF50',
+                    tension: 0.1
+                }, {
+                    label: '内存使用率',
+                    data: [],
+                    borderColor: '#2196F3',
+                    tension: 0.1
+                }, {
+                    label: '磁盘使用率',
+                    data: [],
+                    borderColor: '#FF9800',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // WebSocket 连接
+        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        let timestamps = [];
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const now = new Date().toLocaleTimeString();
+            
+            timestamps.push(now);
+            if (timestamps.length > 60) timestamps.shift();
+            
+            chart.data.labels = timestamps;
+            
+            chart.data.datasets[0].data.push(data.cpu_usage);
+            chart.data.datasets[1].data.push(data.mem_usage);
+            chart.data.datasets[2].data.push(data.disk_usage);
+            
+            chart.data.datasets.forEach(dataset => {
+                if (dataset.data.length > 60) dataset.data.shift();
+            });
+            
+            chart.update();
+        };
+
+        // Wi-Fi 功能
+        let selectedSSID = '';
+
+        async function scanWifi() {
+    try {
+        const response = await fetch('/scan');
+        
+        // 检查HTTP状态码
+        if (!response.ok) {
+            throw new Error(`请求失败: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('完整响应数据:', data); // 调试日志
+
+        // 添加数据校验
+        if (!data.networks || !Array.isArray(data.networks)) {
+            throw new Error('无效的响应格式');
+        }
+
+        renderWifiList(data.networks);
+    } catch (error) {
+        console.error('Wi-Fi扫描失败:', error);
+        alert(`扫描失败: ${error.message}`);
+        renderWifiList([]); // 清空列表显示
+    }
+}
+
+function renderWifiList(networks) {
+    const list = document.getElementById('wifiList');
+    
+    // 确保总是有效数组
+    const safeNetworks = Array.isArray(networks) ? networks : [];
+    
+    list.innerHTML = safeNetworks.map(network => {
+        // 处理可能的undefined值
+        const ssid = network.ssid || '未知网络';
+        const signal = network.signal || '-100';
+        const flags = network.flags?.join(' ') || '无加密信息';
+
+        return `
+            <li class="wifi-item" onclick="selectSSID('${ssid}', this)">
+                <div class="wifi-info">
+                    <div class="ssid">${ssid}</div>
+                    <div class="details">
+                        <span class="signal">信号: ${signal}dBm</span>
+                        <span class="encryption">${flags}</span>
+                    </div>
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+        function selectSSID(ssid, element) {
+            // 关闭所有已打开的输入框
+            document.querySelectorAll('.input-container').forEach(container => {
+                container.classList.remove('input-visible');
+            });
+        
+            // 创建或显示输入框
+            let inputContainer = element.querySelector('.input-container');
+            if (!inputContainer) {
+                inputContainer = document.createElement('div');
+                inputContainer.className = 'input-container';
+                inputContainer.innerHTML = `
+                    <input type="password" 
+                           class="wifi-password" 
+                           placeholder="输入 ${ssid} 的密码"
+                           data-ssid="${ssid}">
+                    <button onclick="connectWifi(this)">连接</button>
+                `;
+                element.appendChild(inputContainer);
+            }
+
+            inputContainer.classList.add('input-visible');
+        }
+
+        async function connectWifi(button) {
+            const container = button.parentElement;
+            const ssid = container.querySelector('input').dataset.ssid;
+            const password = container.querySelector('input').value;
+            console.log(ssid)
+            console.log(password)
+            // const password = document.getElementById('wifiPassword').value;
+            const response = await fetch('/connect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}`
+            });
+            
+            const result = await response.json();
+            alert(result.status === "success" ? "连接成功！" : "连接失败：" + result.output);
+        }
+    </script>
+</body>
+</html>
