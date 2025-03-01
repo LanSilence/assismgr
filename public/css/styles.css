@@ -1,0 +1,207 @@
+:root {
+    --primary-color: #2196F3;
+    --background: #1A1A1A;
+    --card-bg: #2D2D2D;
+    --text-primary: #FFFFFF;
+    --card-min-width: 480px;
+    --chart-height: 300px;
+    --card-padding: 25px;
+    --title-font-size: 1.5rem;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+    padding: 20px;
+}
+
+/* 选项卡样式 */
+.tabs {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    border-bottom: 2px solid var(--card-bg);
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 30px;
+    margin-right: 5px;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 8px 8px 0 0;
+}
+
+.tab-btn.active {
+    background: var(--card-bg);
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+}
+
+.dashboard {
+    display: grid;
+    max-width: 1200px;
+    margin: 0 auto;
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 0;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: var(--card-padding);
+    display: none;
+}
+
+.card.active-tab {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-size: var(--title-font-size);
+    margin-bottom: 25px;
+}
+
+.wifi-list {
+    list-style: none;
+    margin-top: 10px;
+}
+
+.wifi-item {
+    padding: 15px;
+    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    position: relative;
+}
+
+.wifi-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.metric-chart {
+    margin-top: 15px;
+    height: var(--chart-height);
+}
+
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 1rem;
+}
+
+button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+.wifi-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ssid {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.signal::before {
+    content: "📶 ";
+}
+
+.encryption::before {
+    content: "🔒 ";
+}
+
+.input-container {
+    display: none;
+    position: relative;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 0 8px 8px;
+    margin-top: -5px;
+}
+
+.input-visible {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --card-min-width: 100%;
+        --chart-height: 250px;
+        --card-padding: 20px;
+        --title-font-size: 1.3rem;
+    }
+    
+    .dashboard {
+        padding: 15px;
+    }
+    
+    .tab-btn {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+}
+
+/* 高级功能卡片样式 */
+#advancedTab button {
+    margin: 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+}
+
+#advancedTab button:hover {
+    background-color: #0056b3;
+}

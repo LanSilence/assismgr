@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>服务管理</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .service-list {
+            list-style: none;
+            padding: 0;
+        }
+        .service-list li {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .service-list button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .service-list button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 添加CSS样式 */
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px; /* 按钮间距 */
+            margin-left: auto; /* 关键右对齐属性 */
+        }
+
+        /* 可选：增加悬停效果 */
+        button:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="card-title">服务管理</h2>
+    <button onclick="loadServices()">刷新服务列表</button>
+    <ul class="service-list" id="serviceList"></ul>
+
+    <script>
+        // 加载服务列表
+        async function loadServices() {
+            try {
+                const response = await fetch('/services', {
+                    method: 'GET',
+                    headers: {'Content-Type': 'application/json'},
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const services = await response.json();
+                renderServiceList(services);
+            } catch (error) {
+                console.error('获取服务列表失败:', error);
+                alert('获取服务列表失败，请稍后重试。');
+            }
+        }
+
+        // 渲染服务列表
+        function renderServiceList(services) {
+            const serviceList = document.getElementById('serviceList');
+            serviceList.innerHTML = services.map(service => {
+                const escapedName = service.name.replace(/['"<>]/g, '');
+                return `
+                    <li class="service-item">
+                        <span class="service-name">${service.name}</span>
+                        <div class="action-buttons">
+                            <button onclick="${service.isEnabled ? 'disableService' : 'enableService'}('${escapedName}')">
+                                ${service.isEnabled ? '禁用' : '启用'}
+                            </button>
+                            <button onclick="ctrlService('${escapedName}', ${service.isActive})">
+                                ${service.isActive ? '停止' : '运行'}
+                            </button>
+                            <button onclick="restartService('${escapedName}')">重启</button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // 安装服务
+        async function installService(name) {
+            // try {
+            //     const response = await fetch(`/service/install?name=${name}`, {
+            //         method: 'POST',
+            //     });
+
+            //     if (!response.ok) {
+            //         throw new Error(`HTTP error! status: ${response.status}`);
+            //     }
+
+            //     alert('服务安装成功');
+            //     loadServices(); // 刷新服务列表
+            // } catch (error) {
+            //     console.error('安装服务失败:', error);
+            //     alert('安装服务失败，请稍后重试。');
+            // }
+        }
+
+        // 禁用服务
+        async function disableService(name) {
+            try {
+                const response = await fetch(`/service/enable?name=${name}&status=disable`, {
+                    method: 'POST',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                alert('服务已禁用');
+                loadServices(); // 刷新服务列表
+            } catch (error) {
+                console.error('服务禁用失败:', error);
+                alert('服务禁用失败，请稍后重试。');
+            }
+        }
+
+        async function enableService(name) {
+            try {
+                const response = await fetch(`/service/enable?name=${name}&status=enable`, {
+                    method: 'POST',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                alert('服务启用成功');
+                loadServices(); // 刷新服务列表
+            } catch (error) {
+                console.error('服务启用失败:', error);
+                alert('服务启用失败，请稍后重试。');
+            }
+        }
+        // 停止服务
+        async function ctrlService(name, isActive) {
+            // 根据实际状态决定操作命令
+            const ctrl = isActive ? "stop" : "start";  // 修正逻辑判断
+                
+            try {
+                const response = await fetch(`/service/ctrl?name=${name}&ctrl=${ctrl}`, {
+                    method: 'POST',
+                });
+            
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            
+                alert(`服务${isActive ? '已停止' : '已启动'}`);
+                setTimeout(refreshStatus, 1000); // 操作成功后刷新状态
+            } catch (error) {
+                console.error(`操作失败:`, error);
+                alert(`服务操作失败，请检查日志`);
+            }
+        }
+
+        // 重启服务
+        async function restartService(name) {
+            try {
+                const response = await fetch(`/service/restart?name=${name}`, {
+                    method: 'POST',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                alert('服务重启成功');
+            } catch (error) {
+                console.error('重启服务失败:', error);
+                alert('重启服务失败，请稍后重试。');
+            }
+        }
+
+        // 页面加载时自动加载服务列表
+        window.onload = loadServices;
+    </script>
+</body>
+</html>
