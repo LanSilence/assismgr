@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -50,6 +52,19 @@ type WifiNetwork struct {
 
 func startWebSocket() {
 	wsHandler := func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		if token == "" {
+			log.Println(r.URL, "Invalid token")
+			respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+			return
+		}
+
+		_, err := validateToken(token)
+		if err != nil {
+			log.Println(r.URL, "Invalid token")
+			respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+			return
+		}
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("WebSocket upgrade error:", err)
@@ -95,6 +110,35 @@ func getSystemInfo() SystemInfo {
 		CPUUsage:  cpuPercent,
 		MemUsage:  memPercent,
 		DiskUsage: diskPercent,
+	}
+}
+
+func netStauts(w http.ResponseWriter, r *http.Request) {
+
+	type NetWorkStatus struct {
+		Netstaus  bool    `json:"netstaus"`
+		Downspeed float32 `json:"downspeed"`
+		Upspeed   float32 `json:"upspeed"`
+	}
+
+	var netstaus bool
+	cmd := exec.Command("ping", "www.baidu.com")
+	err := cmd.Run()
+	if err != nil {
+		netstaus = false
+	} else {
+		netstaus = true
+	}
+	status := NetWorkStatus{
+		Netstaus:  netstaus,
+		Downspeed: 34.54,
+		Upspeed:   10.33,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Println(status)
+	if err := json.NewEncoder(w).Encode(status); err != nil {
+		log.Printf("JSON 编码失败: %v\n", err)
+		http.Error(w, "服务器内部错误", http.StatusInternalServerError)
 	}
 }
 
@@ -155,6 +199,35 @@ func getSystemLogs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 鉴权中间件
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 从 Header 获取 Token
+		tokenString := r.Header.Get("Authorization")
+		if tokenString == "" {
+			log.Println(r.URL, "No token!")
+			http.ServeFile(w, r, "./public/login.html")
+			return
+		}
+
+		// 解析验证 Token
+		claims, err := validateToken(tokenString)
+		if err != nil {
+			log.Println("Invalid token")
+			respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid token"})
+			return
+		}
+
+		// 将用户名存入请求上下文
+		ctx := context.WithValue(r.Context(), "username", claims.Subject)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+}
+
+func handleAuthRoute(pattern string, handler http.HandlerFunc) {
+	http.HandleFunc(pattern, authMiddleware(handler))
+}
+
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -164,10 +237,13 @@ func main() {
 	fs := http.FileServer(http.Dir("./public"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	// 其他路由配置
-
-	http.HandleFunc("/serverlogs", getServerLogs)
-	http.HandleFunc("/systemlogs", getSystemLogs)
-
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./public/images/favicon.ico")
+	})
+	initLogin()
+	handleAuthRoute("/serverlogs", getServerLogs)
+	handleAuthRoute("/systemlogs", getSystemLogs)
+	handleAuthRoute("/netstatus", netStauts)
 	initServiceMgr()
 	initAdvance()
 	initWifiMgr()

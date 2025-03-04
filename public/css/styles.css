@@ -80,6 +80,12 @@ body {
     margin-bottom: 25px;
 }
 
+.netstatus-title {
+    color: #c1e65d;
+    font-size: var(--title-font-size);
+    margin-bottom: 20px;
+}
+
 .wifi-list {
     list-style: none;
     margin-top: 10px;
@@ -204,4 +210,71 @@ button:hover {
 
 #advancedTab button:hover {
     background-color: #0056b3;
+}
+
+.card-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.network-status-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-subtitle {
+    font-size: 0.95em;
+    opacity: 0.8;
+    position: relative;
+    padding-right: 8px;
+}
+
+/* 添加分隔线方案（二选一） */
+/* 方案1：文字分隔 */
+.card-subtitle::after {
+    content: "";
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 60%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 方案2：增加间距 */
+.network-status-header {
+    margin-left: 25px;
+    padding-left: 25px;
+    position: relative;
+}
+.network-status-header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 60%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 状态指示点优化 */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #FF5252;
+    box-shadow: 0 0 8px rgba(255, 82, 82, 0.3);
+    transition: all 0.3s ease;
+}
+
+.status-dot.online {
+    background: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
 }

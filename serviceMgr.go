@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
@@ -26,23 +25,24 @@ var availableServices = []string{
 	"mysql-server",
 	"redis-server",
 	"frpc",
+	"frps",
 }
 
 func initServiceMgr() {
 	// 定义 /services 接口
-	http.HandleFunc("/services", getServices)
+	handleAuthRoute("/services", getServices)
 
 	// 定义 /service/install 接口
-	http.HandleFunc("/service/install", installService)
+	handleAuthRoute("/service/install", installService)
 
 	// 定义 /service/remove 接口
-	http.HandleFunc("/service/enable", enableService)
+	handleAuthRoute("/service/enable", enableService)
 
 	// 定义 /service/stop 接口
-	http.HandleFunc("/service/ctrl", ctrlService)
+	handleAuthRoute("/service/ctrl", ctrlService)
 
 	// 定义 /service/restart 接口
-	http.HandleFunc("/service/restart", restartService)
+	handleAuthRoute("/service/restart", restartService)
 
 }
 
@@ -60,7 +60,6 @@ func getServices(w http.ResponseWriter, r *http.Request) {
 			IsEnableD: enable,
 			IsActive:  active,
 		})
-		fmt.Println(services)
 	}
 
 	// 返回 JSON 响应
@@ -78,7 +77,6 @@ func isServiceEnable(name string) bool {
 	if err != nil {
 		return false
 	}
-	fmt.Println(name, string(output))
 	result := strings.TrimSpace(string(output))
 	return result == "enabled"
 }
@@ -89,7 +87,6 @@ func isServiceActive(name string) bool {
 	if err != nil {
 		return false
 	}
-	fmt.Println(name, string(output))
 	result := strings.TrimSpace(string(output))
 	return result == "active"
 }

@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/static/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/js/advance.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/netstatus.js"></script>
     <style>
 
     </style>
@@ -25,7 +27,25 @@
     <div class="dashboard">
         <!-- 系统监控卡片 -->
         <div class="card active-tab" id="systemTab">
-            <h2 class="card-title">系统状态</h2>
+            <div class="card-title-container">
+                <h2 class="card-title">系统状态</h2>
+                <div class="network-status-header">
+                    <span class="netstatus-title">网络状态</span>
+                    <span id="onlineStatus" class="status-dot"></span>
+                </div>
+                <div class="status-item">
+                    <span class="netstatus-title">延迟：</span>
+                    <span id="latencyValue" class="value">-- ms</span>
+                </div>
+                <div class="status-item">
+                    <span class="netstatus-title">下行速度：</span>
+                    <span id="downloadSpeed" class="value">-- Mbps</span>
+                </div>
+                <div class="status-item">
+                    <span class="netstatus-title">上行速度：</span>
+                    <span id="uploadSpeed" class="value">-- Mbps</span>
+                </div>
+            </div>
             <div class="metric-chart">
                 <canvas id="metricsChart"></canvas>
             </div>
@@ -97,8 +117,14 @@
             }
         });
 
+
+        if (!localStorage.getItem('authToken')) {
+            document.write(''); 
+            window.location.replace('/login');
+            throw new Error('未授权访问'); // 终止代码执行
+        }
         // WebSocket 连接
-        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        const ws = createAuthWebSocket('ws://' + window.location.host + '/ws');
         let timestamps = [];
 
         ws.onmessage = (event) => {
@@ -128,7 +154,7 @@
 
         // 更新按钮状态的函数
         function updateAPButtonState() {
-            fetch('/ap-status')
+            authFetch('/ap-status')
                 .then(response => response.json())
                 .then(data => {
                     const button = document.getElementById('apToggleBtn');
@@ -138,7 +164,7 @@
 
         // 切换热点状态的函数
         function toggleAP() {
-            fetch('/toggle-ap', { method: 'POST' })
+            authFetch('/toggle-ap', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -154,7 +180,7 @@
 
         async function scanWifi() {
             try {
-                const response = await fetch('/scan');
+                const response = await authFetch('/scan');
                 if (!response.ok) throw new Error(`请求失败: ${response.status}`);
                 const data = await response.json();
                 if (!data.networks || !Array.isArray(data.networks)) throw new Error('无效的响应格式');
@@ -220,7 +246,7 @@
         // 这里可以替换为实际的日志获取逻辑
             try {
             // 发送 GET 请求获取日志
-                const response = await fetch('/serverlogs', {
+                const response = await authFetch('/serverlogs', {
                     method: 'GET',
                     headers: {'Content-Type': 'application/json'},
                 });
@@ -245,7 +271,7 @@
         // 这里可以替换为实际的日志获取逻辑
             try {
             // 发送 GET 请求获取日志
-                const response = await fetch('/systemlogs', {
+                const response = await authFetch('/systemlogs', {
                     method: 'GET',
                     headers: {'Content-Type': 'application/json'},
                 });
@@ -273,7 +299,7 @@
             const password = container.querySelector('input').value;
             
             try {
-                const response = await fetch('/connect', {
+                const response = await authFetch('/connect', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                     body: `ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}`

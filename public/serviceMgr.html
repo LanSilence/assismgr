@@ -6,6 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <title>服务管理</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
     <style>
         .service-list {
             list-style: none;
@@ -61,7 +62,7 @@
         // 加载服务列表
         async function loadServices() {
             try {
-                const response = await fetch('/services', {
+                const response = await authFetch('/services', {
                     method: 'GET',
                     headers: {'Content-Type': 'application/json'},
                 });
@@ -103,7 +104,7 @@
         // 安装服务
         async function installService(name) {
             // try {
-            //     const response = await fetch(`/service/install?name=${name}`, {
+            //     const response = await authFetch(`/service/install?name=${name}`, {
             //         method: 'POST',
             //     });
 
@@ -122,7 +123,7 @@
         // 禁用服务
         async function disableService(name) {
             try {
-                const response = await fetch(`/service/enable?name=${name}&status=disable`, {
+                const response = await authFetch(`/service/enable?name=${name}&status=disable`, {
                     method: 'POST',
                 });
 
@@ -140,7 +141,7 @@
 
         async function enableService(name) {
             try {
-                const response = await fetch(`/service/enable?name=${name}&status=enable`, {
+                const response = await authFetch(`/service/enable?name=${name}&status=enable`, {
                     method: 'POST',
                 });
 
@@ -161,7 +162,7 @@
             const ctrl = isActive ? "stop" : "start";  // 修正逻辑判断
                 
             try {
-                const response = await fetch(`/service/ctrl?name=${name}&ctrl=${ctrl}`, {
+                const response = await authFetch(`/service/ctrl?name=${name}&ctrl=${ctrl}`, {
                     method: 'POST',
                 });
             
@@ -180,7 +181,7 @@
         // 重启服务
         async function restartService(name) {
             try {
-                const response = await fetch(`/service/restart?name=${name}`, {
+                const response = await authFetch(`/service/restart?name=${name}`, {
                     method: 'POST',
                 });
 

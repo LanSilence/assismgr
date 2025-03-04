@@ -1,7 +1,7 @@
 // 更新系统
 async function updateSystem() {
     try {
-        const response = await fetch('/update', {
+        const response = await authFetch('/update', {
             method: 'POST',
         });
 
@@ -19,7 +19,7 @@ async function updateSystem() {
 // 重启系统
 async function rebootSystem() {
     try {
-        const response = await fetch('/reboot', {
+        const response = await authFetch('/reboot', {
             method: 'POST',
         });
 
@@ -44,7 +44,7 @@ async function resetSystem() {
     }
 
     try {
-        const response = await fetch('/reset', {
+        const response = await authFetch('/reset', {
             method: 'POST',
         });
 

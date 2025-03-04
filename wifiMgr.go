@@ -12,10 +12,10 @@ import (
 )
 
 func initWifiMgr() {
-	http.HandleFunc("/ap-status", apStatusHandler)
-	http.HandleFunc("/toggle-ap", toggleAPHandler)
-	http.HandleFunc("/scan", handleWLANScan)
-	http.HandleFunc("/connect", handleConnectWLAN)
+	handleAuthRoute("/ap-status", apStatusHandler)
+	handleAuthRoute("/toggle-ap", toggleAPHandler)
+	handleAuthRoute("/scan", handleWLANScan)
+	handleAuthRoute("/connect", handleConnectWLAN)
 }
 
 func parseWifiOutput(output string) []WifiNetwork {

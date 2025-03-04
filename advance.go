@@ -52,7 +52,7 @@ func rebootSystem(w http.ResponseWriter, r *http.Request) {
 func resetSystem(w http.ResponseWriter, r *http.Request) {
 	// 这里可以根据实际需求实现恢复出厂设置的逻辑
 	// 例如：删除配置文件、重置数据库等
-	cmd := exec.Command("sudo", "rm", "-rf", "/path/to/config")
+	cmd := exec.Command("sudo", "rm", "-rf", "/data/*")
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("恢复出厂设置失败: %v\n", err)

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 网络管理系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        /* 复用仪表盘 CSS 变量 */
+        :root {
+            --primary-color: #2196F3;
+            --background: #1A1A1A;
+            --card-bg: #2D2D2D;
+            --text-primary: #FFFFFF;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --error-color: #FF5252;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 40px 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-title {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .login-button:hover {
+            opacity: 0.9;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .footer-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .login-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h1 class="login-title">网络管理系统</h1>
+            
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="username">用户名</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        class="form-input" 
+                        placeholder="请输入用户名"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">密码</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="请输入密码"
+                        required
+                    >
+                    <div class="error-message" id="passwordError">
+                        用户名或密码错误
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button">登 录</button>
+            </form>
+
+            <div class="login-footer">
+                <a href="#" class="footer-link">忘记密码?</a>
+                <a href="#" class="footer-link">注册账户</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const passwordError = document.getElementById('passwordError');
+
+        // 处理表单提交
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // 清除错误状态
+            passwordError.style.display = 'none';
+
+            try {
+                // 显示加载状态
+                loginForm.querySelector('button').innerHTML = '登录中...';
+                
+                // 调用登录接口
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 存储 Token
+                    localStorage.setItem('authToken', data.token);
+                    window.location.href = '/index'
+                    console.log("token:"+data.token)
+                    // 跳转到仪表盘
+                    if (!localStorage.getItem('authToken')) {
+                        console.log("no token")
+                        window.location.href = '/login.html';
+                    }
+                } else {
+                    // 显示错误信息
+                    passwordError.style.display = 'block';
+                    loginForm.querySelector('button').innerHTML = '登 录';
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                passwordError.textContent = '网络连接错误';
+                passwordError.style.display = 'block';
+                loginForm.querySelector('button').innerHTML = '登 录';
+            }
+        });
+
+        // 输入时隐藏错误信息
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', () => {
+                passwordError.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
