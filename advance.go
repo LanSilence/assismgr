@@ -9,13 +9,13 @@ import (
 
 func initAdvance() {
 	// 定义 /update 接口
-	http.HandleFunc("/update", updateSystem)
+	handleAuthRoute("/update", updateSystem)
 
 	// 定义 /reboot 接口
-	http.HandleFunc("/reboot", rebootSystem)
+	handleAuthRoute("/reboot", rebootSystem)
 
 	// 定义 /reset 接口
-	http.HandleFunc("/reset", resetSystem)
+	handleAuthRoute("/reset", resetSystem)
 }
 
 // 更新系统

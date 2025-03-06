@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -122,7 +121,7 @@ func netStauts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var netstaus bool
-	cmd := exec.Command("ping", "www.baidu.com")
+	cmd := exec.Command("ping", "-c 2", "www.baidu.com")
 	err := cmd.Run()
 	if err != nil {
 		netstaus = false
@@ -135,7 +134,6 @@ func netStauts(w http.ResponseWriter, r *http.Request) {
 		Upspeed:   10.33,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Println(status)
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		log.Printf("JSON 编码失败: %v\n", err)
 		http.Error(w, "服务器内部错误", http.StatusInternalServerError)
@@ -228,8 +226,24 @@ func handleAuthRoute(pattern string, handler http.HandlerFunc) {
 	http.HandleFunc(pattern, authMiddleware(handler))
 }
 
+func httpSwitchLed(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
+
+	switch r.Method {
+	case http.MethodGet:
+		handleGetStatus(w)
+	case http.MethodPost:
+		handlePostRequest(w, r)
+	default:
+		sendErrorResponse(w, http.StatusMethodNotAllowed, "不支持的请求方法")
+	}
+}
+
 func main() {
 
+	systemStartUp()
+	ledInit()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./public/index.html")
 	})
@@ -244,6 +258,7 @@ func main() {
 	handleAuthRoute("/serverlogs", getServerLogs)
 	handleAuthRoute("/systemlogs", getSystemLogs)
 	handleAuthRoute("/netstatus", netStauts)
+	handleAuthRoute("/ledstatus", httpSwitchLed)
 	initServiceMgr()
 	initAdvance()
 	initWifiMgr()

@@ -78,10 +78,96 @@
             <button onclick="updateSystem()">更新系统</button>
             <button onclick="rebootSystem()">重启系统</button>
             <button onclick="resetSystem()">恢复出厂设置</button>
+            <button id="ledButton" onclick="toggleLed()">加载指示灯状态...</button>
         </div>
     </div>
 
     <script>
+
+        const STATUS = {
+            ON: '开启指示灯',
+            OFF: '关闭指示灯'
+        };
+
+        // 初始化加载
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await authFetch('/ledstatus', { method: 'GET' });
+                const data = await response.json();
+                updateButton(data.status);
+            } catch (error) {
+                console.log('初始化失败: ' + error.message);
+            }
+        });
+
+        // 切换指示灯
+        async function toggleLed() {
+            const button = document.getElementById('ledButton');
+            button.disabled = true;
+
+            try {
+                const currentStatus = button.textContent === STATUS.ON ? 'ON' : 'OFF';
+                const targetStatus = currentStatus === 'ON' ? 'OFF' : 'ON';
+            
+                const response = await authFetch('/ledstatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: targetStatus })
+                });
+            
+                const result = await response.json();
+                updateButton(result.status);
+            } catch (error) {
+                showToast('状态切换失败: ' + error.message);
+                console.error('API Error:', error);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // 更新按钮状态
+        function updateButton(status) {
+            const button = document.getElementById('ledButton');
+            button.textContent = status === 'ON' ? STATUS.ON : STATUS.OFF;
+            button.classList.toggle('active', status === 'ON');
+        }
+
+        // 初始化时获取指示灯状态
+        // window.onload = function() {
+        //     authFetch('/ledstatus')
+        //         .then(response => response.text())
+        //         .then(status => {
+        //             const button = document.getElementById('ledButton');
+        //             button.textContent = status === 'on' ? '开启指示灯' : '关闭指示灯';
+        //         });
+        // };
+
+        // 切换指示灯状态
+        function switchLed() {
+            const button = document.getElementById('ledButton');
+            const currentState = button.textContent === '开启指示灯' ? 'on' : 'off';
+            const targetState = currentState === 'on' ? 'off' : 'on'; // 取反
+            try{
+                    authFetch('/ledstatus', {
+                    method: 'POST',
+                    body: targetState,
+                    headers: {
+                        'Content-Type': 'text/plain',
+                },
+                }).then(response => response.json)
+                .then(data => {
+                    console.log(data)
+                    button.textContent = data.status === 'ON' ? '开启指示灯' : '关闭指示灯';})
+
+
+
+                
+        } catch(error ) {
+            console.error('API Error:', error);
+        }
+        }
         // 图表初始化
         const ctx = document.getElementById('metricsChart').getContext('2d');
         const chart = new Chart(ctx, {

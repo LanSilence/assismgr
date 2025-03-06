@@ -25,11 +25,9 @@ async function authFetch(url, options = {}) {
         ...options,
         headers
     };
-    console.log("发起请求")
     // 发起请求并处理 401 错误
     try {
         const response = await fetch(url, mergedOptions);
-        console.log("ststus:"+response.status)
         if (response.status === 401) {
             handleUnauthorized();
             return Promise.reject('会话过期，请重新登录');

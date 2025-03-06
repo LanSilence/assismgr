@@ -33,14 +33,9 @@ class NetworkMonitor {
     async fetchNetworkStatus() {
       try {
         const startTime = Date.now();
-        const response = await fetch('/netstatus', {
-          headers: {
-            'Authorization': `${localStorage.getItem('authToken')}`
-          }
-        });
+        const response = await authFetch('/netstatus');
   
         if (!response.ok) throw new Error('网络响应异常');
-        console.log(response)
         const data = await response.json();
         return {
           ...data,
@@ -71,10 +66,10 @@ class NetworkMonitor {
       }
   
       // 更新数据
-      statusElements.latency.textContent = `${Math.min(data.latency, 999)} ms`;
-      statusElements.download.textContent = `${data.downloadSpeed.toFixed(1)} Mbps`;
-      statusElements.upload.textContent = `${data.uploadSpeed.toFixed(1)} Mbps`;
-      statusElements.status.classList.toggle('online', data.isOnline);
+      statusElements.latency.textContent = `${Math.min(data.latency, 9999)} ms`;
+      statusElements.download.textContent = `${data.downspeed.toFixed(1)} Mbps`;
+      statusElements.upload.textContent = `${data.upspeed.toFixed(1)} Mbps`;
+      statusElements.status.classList.toggle('online', data.netstatus);
     }
   
     // 执行状态更新
