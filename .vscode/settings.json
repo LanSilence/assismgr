@@ -1,0 +1,9 @@
+{
+    "go.gopath": "",
+    "go.alternateTools": {
+        "go": "/home/ubuntu/program/go/bin/go",
+        "dlv": "/home/ubuntu/go/bin/dlv",
+        "gopls": "/home/ubuntu/go/bin/gopls"
+        
+    }
+}

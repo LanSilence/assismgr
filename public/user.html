@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>用户中心</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        /* 保持原有样式一致性 */
+        .card {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+        <h2 class="card-title">用户中心</h2>
+        
+        <!-- 修改密码表单 -->
+        <form id="passwordForm">
+            <div class="form-group">
+                <label for="oldPassword">旧密码：</label>
+                <input type="password" id="oldPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="newPassword">新密码：</label>
+                <input type="password" id="newPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">确认新密码：</label>
+                <input type="password" id="confirmPassword" required>
+            </div>
+
+            <div class="action-buttons">
+                <button type="submit">修改密码</button>
+                <button type="button" class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </form>
+
+        <!-- 消息提示 -->
+        <div id="message" class="message"></div>
+
+    <script>
+        // 表单提交处理
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const messageEl = document.getElementById('message');
+
+            // 客户端验证
+            if (newPassword !== confirmPassword) {
+                showMessage('两次输入的新密码不一致', 'error');
+                return;
+            }
+
+            try {
+                const response = await authFetch('/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        oldPassword,
+                        newPassword
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage('密码修改成功！', 'success');
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    showMessage(result.message || '修改失败', 'error');
+                }
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                showMessage('请求失败，请检查网络连接', 'error');
+            }
+        });
+
+        // 退出登录
+        async function logout() {
+            try {
+                // await authFetch('/logout', {
+                //     method: 'POST'
+                // });
+                
+                // 清除本地存储的token
+                localStorage.clear();
+                sessionStorage.clear();
+                // 跳转到登录页
+                window.location.replace('/login'); // 替代 href 赋值
+        
+                // 可选：清除浏览器历史记录防止返回
+                window.history.replaceState(null, '', '/login');
+            } catch (error) {
+                console.error('退出登录失败:', error);
+            }
+        }
+
+        // 显示提示消息
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            // 3秒后隐藏消息
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

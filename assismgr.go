@@ -254,6 +254,7 @@ func main() {
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./public/images/favicon.ico")
 	})
+	initUser()
 	initLogin()
 	handleAuthRoute("/serverlogs", getServerLogs)
 	handleAuthRoute("/systemlogs", getSystemLogs)
@@ -263,6 +264,7 @@ func main() {
 	initAdvance()
 	initWifiMgr()
 	startWebSocket()
+	initMQTT()
 	log.Println("Starting AssistMgr on :4000")
 	log.Fatal(http.ListenAndServe(":4000", nil))
 }

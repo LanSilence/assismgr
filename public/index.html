@@ -22,6 +22,7 @@
         <button class="tab-btn" onclick="switchTab('services')">服务管理</button>
         <button class="tab-btn" onclick="switchTab('logs')">系统日志</button> <!-- 新增日志选项卡 -->
         <button class="tab-btn" onclick="switchTab('advanced')">高级功能</button>
+        <button class="tab-btn" onclick="switchTab('usercenter')">用户中心</button>
     </div>
 
     <div class="dashboard">
@@ -79,6 +80,9 @@
             <button onclick="rebootSystem()">重启系统</button>
             <button onclick="resetSystem()">恢复出厂设置</button>
             <button id="ledButton" onclick="toggleLed()">加载指示灯状态...</button>
+        </div>
+        <div class="card" id="usercenterTab">
+            <iframe src="/static/user.html" width="100%" height="500px" frameborder="0"></iframe>
         </div>
     </div>
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // 用户模型（示例数据）
@@ -17,7 +18,7 @@ var users = map[string]string{
 // JWT 配置
 var (
 	jwtSecret = []byte("your-secret-key") // 生产环境应从安全配置读取
-	tokenExp  = time.Hour * 24            // Token 有效期
+	tokenExp  = time.Hour * 1             // Token 有效期
 )
 
 // 登录请求结构体
@@ -40,35 +41,47 @@ type ProfileResponse struct {
 func initLogin() {
 	// 注册路由
 	http.HandleFunc("/login", loginHandler)
-
-	// 启动服务器
-	fmt.Println("Server running on :8080")
-	// http.ListenAndServe(":8080", nil)
 }
 
 // 登录处理函数
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+
+	var creds struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
 	// 只接受 POST 请求
 	if r.Method != http.MethodPost {
 		http.ServeFile(w, r, "./public/login.html")
 		return
 	}
 	// 解析请求体
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 		return
 	}
 
 	// 验证用户凭证
-	storedPassword, ok := users[req.Username]
-	if !ok || storedPassword != req.Password {
+
+	user, err := loadUser()
+	if err != nil {
+		http.Error(w, "Authentication failed", http.StatusUnauthorized)
+		return
+	}
+
+	if user.Username != creds.Username {
+		http.Error(w, "Authentication failed", http.StatusUnauthorized)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)); err != nil {
 		respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
 		return
 	}
 
 	// 生成 JWT Token
-	token, err := generateToken(req.Username)
+	token, err := generateToken(creds.Username)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
 		return
