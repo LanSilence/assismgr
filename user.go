@@ -43,7 +43,7 @@ func initUserFile() error {
 	userMutex.Lock()
 	defer userMutex.Unlock()
 
-	if _, err := os.Stat("/data/user.json"); os.IsNotExist(err) {
+	if _, err := os.Stat("/mnt/data/user.json"); os.IsNotExist(err) {
 		defaultPass := "123456"
 		hash, _ := bcrypt.GenerateFromPassword([]byte(defaultPass), bcrypt.DefaultCost)
 
@@ -53,7 +53,7 @@ func initUserFile() error {
 		}
 
 		data, _ := json.MarshalIndent(user, "", "  ")
-		return os.WriteFile("/data/user.json", data, 0600)
+		return os.WriteFile("/mnt/data/user.json", data, 0600)
 	}
 	return nil
 }
@@ -62,7 +62,7 @@ func loadUser() (*User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
 
-	data, err := os.ReadFile("/data/user.json")
+	data, err := os.ReadFile("/mnt/data/user.json")
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func saveUser(user *User) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("/data/user.json", data, 0600)
+	return os.WriteFile("/mnt/data/user.json", data, 0600)
 }
 
 func loginHandler_test(w http.ResponseWriter, r *http.Request) {

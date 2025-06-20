@@ -264,7 +264,8 @@ func main() {
 	initAdvance()
 	initWifiMgr()
 	startWebSocket()
-	initMQTT()
+	go HaPerMonitor()
+	InitSerialCommands()
 	log.Println("Starting AssistMgr on :4000")
 	log.Fatal(http.ListenAndServe(":4000", nil))
 }

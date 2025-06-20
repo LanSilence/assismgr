@@ -19,7 +19,7 @@ const (
 )
 
 func handleGetStatus(w http.ResponseWriter) {
-	data, err := os.ReadFile("/data/ledstatus")
+	data, err := os.ReadFile("/mnt/data/ledstatus")
 	if err != nil {
 		if os.IsNotExist(err) {
 			sendErrorResponse(w, http.StatusNotFound, "状态文件不存在")
@@ -80,7 +80,7 @@ func sendErrorResponse(w http.ResponseWriter, code int, message string) {
 // 初始化LED状态
 func ledInit() error {
 	// 检查状态文件是否存在
-	if _, err := os.Stat("/data/ledstatus"); os.IsNotExist(err) {
+	if _, err := os.Stat("/mnt/data/ledstatus"); os.IsNotExist(err) {
 		// 文件不存在时创建并初始化ON
 		if err := switchLed(ON); err != nil {
 			return fmt.Errorf("初始化失败: %w", err)
@@ -116,8 +116,7 @@ func switchLed(status bool) error {
 
 	// 定义要控制的LED设备
 	ledDevices := []string{
-		"/sys/class/leds/firefly:blue:power/brightness",
-		"/sys/class/leds/firefly:yellow:power/brightness",
+		"/sys/class/leds/sys_led/brightness",
 	}
 
 	// 批量写入LED设备
@@ -133,10 +132,10 @@ func switchLed(status bool) error {
 
 // 写入单个LED设备
 func writeLedDevice(path string, data []byte) error {
-	// if err := os.WriteFile(path, data, 0644); err != nil {
-	// 	fmt.Printf("设备控制失败(%s): %w (可能需要root权限)", path, err)
-	// 	return fmt.Errorf("设备控制失败(%s): %w (可能需要root权限)", path, err)
-	// }
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		fmt.Printf("设备控制失败(%s): %w (可能需要root权限)", path, err)
+		return fmt.Errorf("设备控制失败(%s): %w (可能需要root权限)", path, err)
+	}
 	return nil
 }
 
@@ -150,13 +149,13 @@ func saveLedStatus(status bool) error {
 	}
 
 	// 原子化写入操作
-	tempFile := "/data/ledstatus.tmp"
+	tempFile := "/mnt/data/ledstatus.tmp"
 	if err := os.WriteFile(tempFile, []byte(statusStr), 0644); err != nil {
 		return fmt.Errorf("临时文件写入失败: %w", err)
 	}
 
 	// 原子替换文件
-	if err := os.Rename(tempFile, "/data/ledstatus"); err != nil {
+	if err := os.Rename(tempFile, "/mnt/data/ledstatus"); err != nil {
 		return fmt.Errorf("文件替换失败: %w", err)
 	}
 
@@ -176,11 +175,11 @@ func WriteBootControl(bc *BootControl) error {
 	byteSlice := (*[16]byte)(unsafe.Pointer(bc))[:size:size]
 
 	// 原子写入（避免系统崩溃导致数据半写入）
-	return os.WriteFile("/data/bootfile", byteSlice, 0644)
+	return os.WriteFile("/mnt/ata/bootfile", byteSlice, 0644)
 }
 
 func systemStartUp() {
-	data, err := os.ReadFile("/data/bootfile")
+	data, err := os.ReadFile("/mnt/data/bootfile")
 	if err != nil {
 		log.Println(err)
 	}
