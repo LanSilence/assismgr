@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -242,17 +243,20 @@ func httpSwitchLed(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	configPath := flag.String("c", defaultConfigFile, "配置文件路径 (JSON 格式)")
+	staticFileDir := flag.String("s", "./public", "静态文件目录")
+	flag.Parse()
 	systemStartUp()
 	ledInit()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./public/index.html")
+		http.ServeFile(w, r, *staticFileDir+"/index.html")
 	})
 	// 配置静态文件服务
-	fs := http.FileServer(http.Dir("./public"))
+	fs := http.FileServer(http.Dir(*staticFileDir))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	// 其他路由配置
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./public/images/favicon.ico")
+		http.ServeFile(w, r, *staticFileDir+"/images/favicon.ico")
 	})
 	initUser()
 	initLogin()
@@ -264,7 +268,7 @@ func main() {
 	initAdvance()
 	initWifiMgr()
 	startWebSocket()
-	go HaPerMonitor()
+	go HaPerMonitor(*configPath)
 	InitSerialCommands()
 	log.Println("Starting AssistMgr on :4000")
 	log.Fatal(http.ListenAndServe(":4000", nil))

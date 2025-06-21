@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 
@@ -34,15 +33,13 @@ func loadConfigFile(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func HaPerMonitor() {
+func HaPerMonitor(configPath string) {
 	// 支持 -c 指定参数文件路径
-	configPath := flag.String("c", defaultConfigFile, "配置文件路径 (JSON 格式)")
-	flag.Parse()
 
-	cfg, err := loadConfigFile(*configPath)
+	cfg, err := loadConfigFile(configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "配置文件读取失败: %v\n", err)
-		os.Exit(1)
+		return
 	}
 
 	mqttCfg := hamqtt.MQTTConfig{
@@ -55,7 +52,7 @@ func HaPerMonitor() {
 	client, err := hamqtt.NewMQTTClient(mqttCfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "MQTT连接失败: %v\n", err)
-		os.Exit(1)
+		return
 	}
 	defer client.Stop()
 	fmt.Println("连接成功，开始上报系统信息...")

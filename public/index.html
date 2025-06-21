@@ -76,6 +76,11 @@
            <!-- 高级功能卡片 -->
         <div class="card" id="advancedTab">
             <h2 class="card-title">高级功能</h2>
+            <form id="updateForm" enctype="multipart/form-data" style="margin-bottom:10px;">
+                <input type="file" id="updateFile" name="updateFile" accept=".rauc,.img,.bin,.tar,.gz,.zip" required>
+                <progress id="uploadProgress" value="0" max="100" style="width:200px;display:none;"></progress>
+            </form>
+            <div id="updateStatus" style="margin: 10px 0; padding: 10px; border-radius: 4px; display: none;"></div>
             <button onclick="updateSystem()">更新系统</button>
             <button onclick="rebootSystem()">重启系统</button>
             <button onclick="resetSystem()">恢复出厂设置</button>
@@ -111,7 +116,7 @@
 
             try {
                 const currentStatus = button.textContent === STATUS.ON ? 'ON' : 'OFF';
-                const targetStatus = currentStatus === 'ON' ? 'OFF' : 'ON';
+                const targetStatus = currentStatus;
             
                 const response = await authFetch('/ledstatus', {
                     method: 'POST',
@@ -134,7 +139,7 @@
         // 更新按钮状态
         function updateButton(status) {
             const button = document.getElementById('ledButton');
-            button.textContent = status === 'ON' ? STATUS.ON : STATUS.OFF;
+            button.textContent = status === 'ON' ? STATUS.OFF : STATUS.ON ;
             button.classList.toggle('active', status === 'ON');
         }
 
@@ -151,8 +156,8 @@
         // 切换指示灯状态
         function switchLed() {
             const button = document.getElementById('ledButton');
-            const currentState = button.textContent === '开启指示灯' ? 'on' : 'off';
-            const targetState = currentState === 'on' ? 'off' : 'on'; // 取反
+            const currentState = button.textContent === '开启指示灯' ? 'off' : 'on';
+            const targetState = currentState // 取反
             try{
                     authFetch('/ledstatus', {
                     method: 'POST',
@@ -163,7 +168,7 @@
                 }).then(response => response.json)
                 .then(data => {
                     console.log(data)
-                    button.textContent = data.status === 'ON' ? '开启指示灯' : '关闭指示灯';})
+                    button.textContent = data.status === 'ON' ?'关闭指示灯' :'开启指示灯';})
 
 
 
