@@ -9,7 +9,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -89,7 +91,7 @@ func ledInit() error {
 	}
 
 	// 读取保存的状态
-	data, err := os.ReadFile("/data/ledstatus")
+	data, err := os.ReadFile("/mnt/data/ledstatus")
 	if err != nil {
 		return fmt.Errorf("读取状态失败: %w", err)
 	}
@@ -106,25 +108,22 @@ func ledInit() error {
 	}
 }
 
+func controlLed(status bool) {
+	var Ledstatus string
+
+	if status {
+		Ledstatus = getLedStatus()
+	} else {
+		Ledstatus = "off"
+	}
+	cmd := exec.Command("led-control", Ledstatus)
+	cmd.Run()
+}
+
 // 控制LED并保存状态
 func switchLed(status bool) error {
-	// 准备控制信号
-	ledValue := []byte{'0'}
-	if status == ON {
-		ledValue = []byte{'1'}
-	}
 
-	// 定义要控制的LED设备
-	ledDevices := []string{
-		"/sys/class/leds/sys_led/brightness",
-	}
-
-	// 批量写入LED设备
-	for _, dev := range ledDevices {
-		if err := writeLedDevice(dev, ledValue); err != nil {
-			return err
-		}
-	}
+	controlLed(status)
 
 	// 保存当前状态
 	return saveLedStatus(status)
@@ -199,5 +198,105 @@ func systemStartUp() {
 	err = WriteBootControl(&bc)
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+const (
+	STATUS_LED_OFF   = 0 // LED关闭状态
+	STATUS_SYSTEM_ON = 1 // 系统开机状态，ip未获取
+	STATUS_IP_OK     = 2 // IP已获取
+	STATUS_NETWORK   = 3 // 网络已连接
+	STATUS_UNKNOWN   = 4 // 未知状态
+)
+
+var ledStatusMap = map[int]string{
+	STATUS_SYSTEM_ON: "fast",      // 系统开机状态，ip未获取
+	STATUS_IP_OK:     "slow",      // IP已获取
+	STATUS_NETWORK:   "heartbeat", // 网络已连接
+	STATUS_UNKNOWN:   "on",        // 未知状态
+	STATUS_LED_OFF:   "off",       // LED关闭状态
+}
+
+func getStoredLedStatus() string {
+	// 读取LED状态文件
+	data, err := os.ReadFile("/mnt/data/ledstatus")
+	if err != nil {
+		log.Println("读取LED状态文件失败:", err)
+		return "ON" // 如果读取失败，返回OFF状态
+	}
+	status := strings.TrimSpace(string(data))
+	if status == "OFF" {
+		return "OFF"
+	}
+	return "ON"
+}
+
+func getLedStatus() string {
+	var ledstatus int
+	var out bytes.Buffer
+	// 执行 ping 命令获取网络状态
+	cmd := exec.Command("ping", "-c 2", "www.baidu.com")
+	err := cmd.Run()
+	if err != nil {
+		ledstatus = STATUS_IP_OK
+	} else {
+		ledstatus = STATUS_NETWORK
+		return ledStatusMap[ledstatus]
+	}
+
+	// 执行 ifconfig 命令获取网络状态
+	for i := 0; i < 10; i++ {
+		cmd = exec.Command("ifconfig")
+		out.Reset()
+		cmd.Stdout = &out
+		err = cmd.Run()
+		if err != nil {
+			break
+		}
+		if strings.Contains(out.String(), "inet ") {
+			// 获取并打印所有IP地址
+			lines := strings.Split(out.String(), "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if strings.HasPrefix(line, "inet ") {
+					fields := strings.Fields(line)
+					if len(fields) > 1 {
+						ledstatus = STATUS_IP_OK
+						return ledStatusMap[ledstatus]
+					}
+				}
+			}
+		}
+	}
+
+	return ledStatusMap[STATUS_SYSTEM_ON] // 如果没有获取到IP，则返回系统开机状态
+}
+
+func updateLed() {
+	// 读取LED状态文件
+	status := getStoredLedStatus()
+
+	// 根据状态更新LED
+	if status == "OFF" {
+		return
+	}
+	var preLedStatus string
+
+	for {
+
+		// 每10次检查一次LED状态
+		Ledstatus := getLedStatus()
+
+		if Ledstatus != preLedStatus { // 如果状态发生变化
+			cmd := exec.Command("led-control", Ledstatus)
+			cmd.Run()
+			preLedStatus = Ledstatus
+			// 如果当前LED状态是OFF，并且网络状态是正常的，则需要关闭LED
+			if getStoredLedStatus() == "OFF" && Ledstatus == ledStatusMap[STATUS_NETWORK] {
+				cmd := exec.Command("led-control", "off") // 关闭LED
+				cmd.Run()
+			}
+		}
+		time.Sleep(10 * time.Second) // 每秒检查一次
 	}
 }
