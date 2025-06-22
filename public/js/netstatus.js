@@ -67,8 +67,8 @@ class NetworkMonitor {
   
       // 更新数据
       statusElements.latency.textContent = `${Math.min(data.latency, 9999)} ms`;
-      statusElements.download.textContent = `${data.downspeed.toFixed(1)} Mbps`;
-      statusElements.upload.textContent = `${data.upspeed.toFixed(1)} Mbps`;
+      statusElements.download.textContent = `${data.downspeed}`;
+      statusElements.upload.textContent = `${data.upspeed}`;
       statusElements.status.classList.toggle('online', data.netstatus);
     }
   

@@ -5,10 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -113,26 +116,111 @@ func getSystemInfo() SystemInfo {
 	}
 }
 
+type NetworkStats struct {
+	RXBytes uint64 // 接收字节数
+	TXBytes uint64 // 发送字节数
+}
+
+func getNetSpeed(intName string) (rxSpeed, txSpeed string, err error) {
+
+	prevStats, err := getNetworkStats(intName)
+	if err != nil {
+
+		return "-", "-", err
+	}
+
+	time.Sleep(1 * time.Second)
+
+	currStats, err := getNetworkStats(intName)
+	if err != nil {
+
+		return "-- B/s", "-- B/s", err
+	}
+
+	rxDiff := currStats.RXBytes - prevStats.RXBytes
+	txDiff := currStats.TXBytes - prevStats.TXBytes
+
+	return formatBytes(rxDiff), formatBytes(txDiff), nil
+}
+
+// getNetworkStats 从/proc/net/dev获取指定网络接口的统计信息
+func getNetworkStats(intName string) (NetworkStats, error) {
+	data, err := os.ReadFile("/proc/net/dev")
+	if err != nil {
+		return NetworkStats{}, err
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, intName+":") {
+			fields := strings.Fields(line)
+			if len(fields) < 10 {
+				return NetworkStats{}, fmt.Errorf("invalid network stats format")
+			}
+
+			rx, err := strconv.ParseUint(fields[1], 10, 64)
+			if err != nil {
+				return NetworkStats{}, err
+			}
+
+			tx, err := strconv.ParseUint(fields[9], 10, 64)
+			if err != nil {
+				return NetworkStats{}, err
+			}
+
+			return NetworkStats{
+				RXBytes: rx,
+				TXBytes: tx,
+			}, nil
+		}
+	}
+
+	return NetworkStats{}, fmt.Errorf("interface %s not found", intName)
+}
+
+// formatBytes 将字节数格式化为易读的字符串 (B/s, KB/s, MB/s)
+func formatBytes(bytes uint64) string {
+	switch {
+	case bytes < 1024:
+		return fmt.Sprintf("%dB/s", bytes)
+	case bytes < 1048576:
+		return fmt.Sprintf("%.2fKB/s", float64(bytes)/1024)
+	default:
+		return fmt.Sprintf("%.2fMB/s", float64(bytes)/1048576)
+	}
+}
+
+func isOnlineWithDNS(host string, timeout time.Duration) bool {
+	resolver := net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			dialer := net.Dialer{Timeout: timeout}
+			return dialer.DialContext(ctx, network, address)
+		},
+	}
+	_, err := resolver.LookupHost(context.Background(), host)
+	return err == nil
+}
 func netStauts(w http.ResponseWriter, r *http.Request) {
 
 	type NetWorkStatus struct {
-		Netstaus  bool    `json:"netstaus"`
-		Downspeed float32 `json:"downspeed"`
-		Upspeed   float32 `json:"upspeed"`
+		Netstaus  bool   `json:"netstaus"`
+		Downspeed string `json:"downspeed"`
+		Upspeed   string `json:"upspeed"`
 	}
 
 	var netstaus bool
-	cmd := exec.Command("ping", "-c 2", "www.baidu.com")
-	err := cmd.Run()
-	if err != nil {
+	if !isOnlineWithDNS("baidu.com", time.Second) {
 		netstaus = false
 	} else {
 		netstaus = true
 	}
+
+	rxSpeed, txSpeed, _ := getNetSpeed("wlan0")
 	status := NetWorkStatus{
 		Netstaus:  netstaus,
-		Downspeed: 34.54,
-		Upspeed:   10.33,
+		Downspeed: rxSpeed,
+		Upspeed:   txSpeed,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(status); err != nil {
@@ -269,6 +357,7 @@ func main() {
 	initWifiMgr()
 	startWebSocket()
 	go HaPerMonitor(*configPath)
+	go updateLed()
 	InitSerialCommands()
 	log.Println("Starting AssistMgr on :4000")
 	log.Fatal(http.ListenAndServe(":4000", nil))
