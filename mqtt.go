@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	hamqtt "pkg/Hamqtt"
 )
@@ -49,10 +50,17 @@ func HaPerMonitor(configPath string) {
 		Pass:     cfg.Pass,
 		ClientID: cfg.ClientID,
 	}
-	client, err := hamqtt.NewMQTTClient(mqttCfg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "MQTT连接失败: %v\n", err)
-		return
+	var client *hamqtt.MQTTClient
+	for i := 0; i < 3; i++ {
+		client, err = hamqtt.NewMQTTClient(mqttCfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "MQTT连接失败: %v\n", err)
+			time.Sleep(2 * time.Second)
+			continue
+		} else {
+			fmt.Println("MQTT连接成功")
+			break
+		}
 	}
 	defer client.Stop()
 	fmt.Println("连接成功，开始上报系统信息...")

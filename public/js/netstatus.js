@@ -39,7 +39,7 @@ class NetworkMonitor {
         const data = await response.json();
         return {
           ...data,
-          latency: Date.now() - startTime // 计算实际延迟
+          latency: Date.now() - startTime - 1000 < 0 ? Date.now() - startTime : Date.now() - startTime - 1000 // 计算实际延迟
         };
       } catch (error) {
         console.error('获取网络状态失败:', error);

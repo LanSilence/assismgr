@@ -42,6 +42,6 @@ async function authFetch(url, options = {}) {
 // 统一处理未授权
 function handleUnauthorized() {
     localStorage.removeItem('authToken');
-    alert('会话已过期，即将跳转登录页面');
+    // alert('会话已过期，即将跳转登录页面');
     window.location.href = '/login';
 }

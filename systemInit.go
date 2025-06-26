@@ -235,9 +235,9 @@ func getLedStatus() string {
 	var ledstatus int
 	var out bytes.Buffer
 	// 执行 ping 命令获取网络状态
-	cmd := exec.Command("ping", "-c 2", "www.baidu.com")
-	err := cmd.Run()
-	if err != nil {
+	netstatus := isOnlineWithDNS("baidu.com", time.Second)
+
+	if !netstatus {
 		ledstatus = STATUS_IP_OK
 	} else {
 		ledstatus = STATUS_NETWORK
@@ -246,15 +246,15 @@ func getLedStatus() string {
 
 	// 执行 ifconfig 命令获取网络状态
 	for i := 0; i < 10; i++ {
-		cmd = exec.Command("ifconfig")
+		cmd := exec.Command("ifconfig")
 		out.Reset()
 		cmd.Stdout = &out
-		err = cmd.Run()
+		err := cmd.Run()
 		if err != nil {
 			break
 		}
 		if strings.Contains(out.String(), "inet ") {
-			// 获取并打印所有IP地址
+
 			lines := strings.Split(out.String(), "\n")
 			for _, line := range lines {
 				line = strings.TrimSpace(line)
@@ -274,12 +274,6 @@ func getLedStatus() string {
 
 func updateLed() {
 	// 读取LED状态文件
-	status := getStoredLedStatus()
-
-	// 根据状态更新LED
-	if status == "OFF" {
-		return
-	}
 	var preLedStatus string
 
 	for {
