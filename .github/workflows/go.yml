@@ -29,18 +29,15 @@ jobs:
     - name: Build arm64
       run: GOARCH=arm64 go build -o out/assismgr-linux-arm64
 
-    - name: Tar public web
-      run: tar -czvf out/public.tar.gz ./public
-    
     - name: Publish to GitHub Releases
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 自动使用内置Token
       with:
         files: |
-          out/*
+          out/*.deb
         tag_name: ${{ github.ref_name }}  # 使用触发工作流的标签（如v1.0.0）
-        name: "Firmware Release ${{ github.ref_name }}"
+        name: " Release ${{ github.ref_name }}"
         body: "自动化构建的应用服务，包含以下文件：\n- assismgr linux amd64 \n- assismgr linux arm64 \n 页面需要单独下载public.tar.gz"
         draft: false  # 直接发布，非草稿模式
 
