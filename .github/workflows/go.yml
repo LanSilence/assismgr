@@ -36,7 +36,15 @@ jobs:
         files: |
           out/*.deb
         tag_name: ${{ github.ref_name }}  # 使用触发工作流的标签（如v1.0.0）
-        name: " Release ${{ github.ref_name }}"
-        body: "自动化构建的应用服务，包含以下文件：\n- assismgr linux amd64 \n- assismgr linux arm64 \n 页面需要单独下载public.tar.gz"
+        name: " AssisMgr Release ${{ github.ref_name }}"
+        body: |
+          自动化构建的应用服务，包含以下文件：
+          - assismgr linux amd64 
+          - assismgr linux arm64 
+           * 安装运行：
+          ```bash
+          sudo dpkg -i assismgr_v${{ github.ref_name }}_amd64.deb 
+          sudo systemctl start assismgr
+          ```bash
         draft: false  # 直接发布，非草稿模式
 

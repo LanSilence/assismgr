@@ -52,7 +52,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// 只接受 POST 请求
 	if r.Method != http.MethodPost {
-		http.ServeFile(w, r, "./public/login.html")
+		http.ServeFile(w, r, *staticFileDir+"/login.html")
 		return
 	}
 	// 解析请求体
