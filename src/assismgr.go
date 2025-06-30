@@ -292,7 +292,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// 从 Header 获取 Token
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
-			log.Println(r.URL, "No token!")
+			log.Println(r.URL, "No token!  ", *staticFileDir)
 			http.ServeFile(w, r, *staticFileDir+"/login.html")
 			return
 		}
