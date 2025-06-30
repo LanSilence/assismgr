@@ -23,11 +23,10 @@ jobs:
     - name: Go mod
       run: go mod tidy
     
-    - name: Build amd64
-      run: go build -o out/assismgr-linux-amd64
+    - name: Build 
+      run: ./build.sh
       
-    - name: Build arm64
-      run: GOARCH=arm64 go build -o out/assismgr-linux-arm64
+
 
     - name: Publish to GitHub Releases
       uses: softprops/action-gh-release@v1
