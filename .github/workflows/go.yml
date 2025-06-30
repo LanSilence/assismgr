@@ -1,0 +1,43 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    tags: ["v*"]  # 仅当推送v开头的标签时触发（如v1.0.0）
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Build amd64
+      run: go build -o out/assismgr-linux-amd64
+      
+    - name: Build arm64
+      run: GOARCH=arm64 go build -o out/assismgr-linux-arm64
+
+    - name: Tar public web
+      run: tar -czvf out/public.tar.gz ./public
+    
+    - name: Publish to GitHub Releases
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 自动使用内置Token
+      with:
+        files: |
+          out/*
+        tag_name: ${{ github.ref_name }}  # 使用触发工作流的标签（如v1.0.0）
+        name: "Firmware Release ${{ github.ref_name }}"
+        body: "自动化构建的应用服务，包含以下文件：\n- assismgr linux amd64 \n- assismgr linux arm64 \n 页面需要单独下载public.tar.gz"
+        draft: false  # 直接发布，非草稿模式
+
