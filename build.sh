@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION=0.0.4
+VERSION=$(cat VERSION)
 
 mkdir -p out
 

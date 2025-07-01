@@ -235,7 +235,7 @@ func getLedStatus() string {
 	var ledstatus int
 	var out bytes.Buffer
 	// 执行 ping 命令获取网络状态
-	netstatus := isOnlineWithDNS("baidu.com", time.Second)
+	netstatus := isOnlineStatus
 
 	if !netstatus {
 		ledstatus = STATUS_IP_OK
@@ -276,6 +276,7 @@ func updateLed() {
 	// 读取LED状态文件
 	var preLedStatus string
 
+	go checkInternet()
 	for {
 
 		// 每10次检查一次LED状态

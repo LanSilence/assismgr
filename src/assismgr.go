@@ -190,6 +190,23 @@ func formatBytes(bytes uint64) string {
 	}
 }
 
+var isOnlineStatus bool
+
+func checkInternet() {
+	for {
+
+		cmd := exec.Command("ping", "-c", "1", "www.baidu.com")
+		err := cmd.Run()
+		if err == nil {
+			isOnlineStatus = true
+		} else {
+			log.Println("ping fail, DNS error")
+			isOnlineStatus = false
+		}
+		time.Sleep(time.Second * 4)
+	}
+}
+
 func isOnlineWithDNS(host string, timeout time.Duration) bool {
 	resolver := net.Resolver{
 		PreferGo: true,
@@ -198,8 +215,14 @@ func isOnlineWithDNS(host string, timeout time.Duration) bool {
 			return dialer.DialContext(ctx, network, address)
 		},
 	}
-	_, err := resolver.LookupHost(context.Background(), host)
-	return err == nil
+	for i := 0; i < 3; i++ {
+		if _, err := resolver.LookupHost(context.Background(), host); err == nil {
+			return true
+		}
+		time.Sleep(500 * time.Millisecond) // 间隔重试
+	}
+	return false
+
 }
 func netStauts(w http.ResponseWriter, r *http.Request) {
 
@@ -336,7 +359,6 @@ func main() {
 	configPath := flag.String("c", defaultConfigFile, "配置文件路径 (JSON 格式)")
 	staticFileDir = flag.String("s", "./public", "静态文件目录")
 	flag.Parse()
-	systemStartUp()
 	ledInit()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, *staticFileDir+"/index.html")

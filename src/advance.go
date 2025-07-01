@@ -135,7 +135,7 @@ func uploadUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localPath := filepath.Join(uploadDir, part.FileName())
+	localPath := filepath.Join(uploadDir, "update.raucb")
 	f, err := os.Create(localPath)
 	if err != nil {
 		setUpgradeStatus("failed", 0, "创建文件失败: "+err.Error())
@@ -180,6 +180,7 @@ func uploadUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			setUpgradeStatus("done", 100, "升级完成")
 		}
+		os.Remove(localPath) // 删除升级文件释放空间
 	}()
 
 	w.WriteHeader(http.StatusOK)
