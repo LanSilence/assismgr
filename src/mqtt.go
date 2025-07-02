@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/LanSilence/hamqtt"
+	hamqtt "github.com/LanSilence/hamqtt/pkg/mqtt"
 )
 
 // 默认参数文件路径
