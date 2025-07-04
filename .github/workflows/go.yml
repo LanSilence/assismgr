@@ -41,10 +41,15 @@ jobs:
           自动化构建的应用服务，包含以下文件：
           - assismgr linux amd64 
           - assismgr linux arm64 
-           * 安装运行：
+
+          * 版本: ${{ github.ref_name }}
+          * Commit: ${{ github.sha }}
+          * 提交信息: ${{ github.event.head_commit.message }}
+          * 提交者: ${{ github.event.head_commit.author.name }}
+
+          * 安装运行：
           ```bash
           sudo dpkg -i assismgr_v${{ github.ref_name }}_amd64.deb 
           sudo systemctl start assismgr
-          ```bash
+          ```
         draft: false  # 直接发布，非草稿模式
-
