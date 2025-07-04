@@ -376,6 +376,7 @@ func main() {
 	handleAuthRoute("/systemlogs", getSystemLogs)
 	handleAuthRoute("/netstatus", netStauts)
 	handleAuthRoute("/ledstatus", httpSwitchLed)
+	handleAuthRoute("/version", versionHandler)
 	initServiceMgr()
 	initAdvance()
 	initWifiMgr()

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统版本信息</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script>
+    <style>
+        .system-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #495057;
+            border-radius: 4px;
+        }
+        .info-item {
+            margin: 8px 0;
+            display: flex;
+        }
+        .info-label {
+            font-weight: 500;
+            min-width: 120px;
+            color: #495057;
+        }
+        .info-value {
+            color: #ffffff;
+        }
+        pre {
+            background: #2D2D2D;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="card active-tab">
+        <h2 class="card-title">系统版本信息</h2>
+        <div class="version-info">
+            <div class="info-item">
+                <span class="info-label">当前版本:</span>
+                <span id="currentVersion" class="info-value">加载中...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Linux版本:</span>
+                <span id="linuxVersion" class="info-value">--</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">架构:</span>
+                <span id="archInfo" class="info-value">--</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">编译时间:</span>
+                <span id="buildTime" class="info-value">--</span>
+            </div>
+        </div>
+        
+        <div class="system-info">
+            <h3>硬件信息</h3>
+            <pre id="cpuInfo">加载中...</pre>
+        </div>
+    </div>
+
+    <script>
+        // 获取版本信息
+        async function fetchVersion() {
+            try {
+                const response = await authFetch('/version');
+                if (!response.ok) throw new Error('获取版本信息失败');
+                const data = await response.json();
+                
+                // 更新基本信息
+                document.getElementById('currentVersion').textContent = data.version;
+                document.getElementById('linuxVersion').textContent = data.linux_version;
+                document.getElementById('archInfo').textContent = data.arch;
+                document.getElementById('buildTime').textContent = data.build_time;
+                
+                // 更新CPU信息
+                document.getElementById('cpuInfo').textContent = data.cpu_info || '无法获取CPU信息';
+            } catch (error) {
+                console.error('获取版本信息失败:', error);
+                document.getElementById('currentVersion').textContent = '获取失败';
+            }
+        }
+
+        // 页面加载时获取版本信息
+        window.addEventListener('DOMContentLoaded', fetchVersion);
+    </script>
+</body>
+</html>

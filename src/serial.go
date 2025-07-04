@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"flag"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // 命令处理函数类型
@@ -34,8 +36,12 @@ func SerialListenLoop(dev string) {
 	defer f.Close()
 	reader := bufio.NewReader(f)
 	writer = bufio.NewWriter(f)
+
+	// 初始化行缓冲
+	lineBuf := make([]byte, 0, 128)
 	for {
-		line, err := reader.ReadString('\n')
+		// 逐个字符读取
+		char, err := reader.ReadByte()
 		if err != nil {
 			if err == io.EOF {
 				continue
@@ -43,11 +49,28 @@ func SerialListenLoop(dev string) {
 			log.Printf("串口读取错误: %v", err)
 			break
 		}
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+
+		// 处理特殊字符
+		switch char {
+		case '\r', '\n': // 回车/换行
+			if len(lineBuf) > 0 {
+				line := string(lineBuf)
+				writer.WriteString("\r\n")
+				go parseAndDispatch(line)
+				lineBuf = lineBuf[:0] // 清空缓冲
+			}
+		case '\x7F', '\x08': // Backspace/Del
+			if len(lineBuf) > 0 {
+				lineBuf = lineBuf[:len(lineBuf)-1]
+				writer.WriteString("\b \b") // 回退并擦除
+			}
+		default: // 普通字符
+			if char >= 32 && char <= 126 { // 可打印ASCII字符
+				lineBuf = append(lineBuf, char)
+				writer.WriteByte(char)
+			}
 		}
-		go parseAndDispatch(line)
+		writer.Flush()
 	}
 }
 
@@ -122,8 +145,11 @@ func wifiCommand(args []string) {
 	}
 	log.Printf("尝试连接WiFi: ssid=%s password=%s", *ssid, *password)
 	messageOutput("尝试连接WiFi: ssid=" + *ssid + " password=" + *password)
-	// nmcli连接
-	cmd := exec.Command("nmcli", "device", "wifi", "connect", *ssid, "password", *password)
+	// 使用CommandContext添加超时控制
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "nmcli", "device", "wifi", "connect", *ssid, "password", *password)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -181,9 +207,22 @@ func InitSerialCommands() {
 		return
 	}
 	log.Println("g_serial模块加载成功")
+
+	// 注册核心命令
 	registerCommand("wifi", wifiCommand)
 	registerCommand("ipaddr", ipcmd)
-	go SerialListenLoop("/dev/ttyGS0") // 假设使用ttyGS0作为串口设备
+	registerCommand("help", helpCommand)
+
+	// 启动串口监听
+	go SerialListenLoop("/dev/ttyGS0")
 	log.Println("串口监听已启动")
-	// 后续可注册更多命令
+}
+
+// 帮助命令
+func helpCommand(args []string) {
+	helpText := `可用命令:
+wifi -s SSID -p PASSWORD  连接WiFi
+ipaddr                    获取IP地址
+help                      显示帮助信息`
+	messageOutput(helpText)
 }

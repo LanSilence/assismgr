@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,8 +18,6 @@ import (
 )
 
 func initAdvance() {
-	// 定义 /update 接口
-	handleAuthRoute("/update", updateSystem)
 
 	// 定义 /reboot 接口
 	handleAuthRoute("/reboot", rebootSystem)
@@ -33,22 +30,6 @@ func initAdvance() {
 
 	// 定义 /upgrade_progress 接口
 	handleAuthRoute("/upgrade_progress", upgradeProgressHandler)
-}
-
-// 更新系统
-func updateSystem(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("sudo", "apt", "update", "&&", "sudo", "apt", "upgrade", "-y")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		log.Printf("系统更新失败: %v\n", err)
-		http.Error(w, "系统更新失败", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("系统更新成功"))
 }
 
 // 重启系统
@@ -67,18 +48,17 @@ func rebootSystem(w http.ResponseWriter, r *http.Request) {
 
 // 恢复出厂设置
 func resetSystem(w http.ResponseWriter, r *http.Request) {
-	// 这里可以根据实际需求实现恢复出厂设置的逻辑
-	// 例如：删除配置文件、重置数据库等
-	cmd := exec.Command("rm", "-rf", "/data/*")
+	// 直接删除文件
+	cmd := exec.Command("sh", "-c", "rm -rf /mnt/data/* /mnt/overlay/* && sync")
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("恢复出厂设置失败: %v\n", err)
-		http.Error(w, "恢复出厂设置失败", http.StatusInternalServerError)
+		http.Error(w, "恢复出厂设置失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("恢复出厂设置成功"))
+	w.Write([]byte("恢复出厂设置成功 需要手动重启系统"))
 }
 
 var (
