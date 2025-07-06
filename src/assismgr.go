@@ -380,6 +380,7 @@ func main() {
 	initServiceMgr()
 	initAdvance()
 	initWifiMgr()
+	sysconfigInit()
 	startWebSocket()
 	go HaPerMonitor(*configPath)
 	go updateLed()
