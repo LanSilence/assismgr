@@ -64,10 +64,36 @@
            <!-- 高级功能卡片 -->
         <div class="card" id="advancedTab">
             <h2 class="card-title">高级功能</h2>
-            <form id="updateForm" enctype="multipart/form-data" style="margin-bottom:10px; display: flex; align-items: center; gap: 12px;">
-                <input type="file" id="updateFile" name="updateFile" accept=".raucb,.img" required style="padding: 6px 10px; border: 1px solid #2196F3; border-radius: 4px; background: #f7fafd; color: #333; font-size: 15px; font-family: inherit;">
-                <progress id="uploadProgress" value="0" max="100" style="width:180px; height: 16px; border-radius: 8px; background: #e3f2fd; color: #2196F3; display:none;"></progress>
-            </form>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                    <label style="display: flex; align-items: center; gap: 4px;">
+                        <input type="radio" name="updateMethod" value="file" checked onchange="toggleUpdateMethod()">
+                        本地文件
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 4px;">
+                        <input type="radio" name="updateMethod" value="url" onchange="toggleUpdateMethod()">
+                        网络URL
+                    </label>
+                </div>
+                <form id="updateForm" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 12px;">
+                    <div id="fileUploadContainer">
+                        <input type="file" id="updateFile" name="updateFile" accept=".raucb,.img" required style="padding: 6px 10px; border: 1px solid #2196F3; border-radius: 4px; background: #f7fafd; color: #333; font-size: 15px; font-family: inherit;">
+                    </div>
+                    <div id="urlInputContainer" style="display: none;">
+                        <input type="url" id="updateUrl" name="updateUrl" placeholder="输入文件URL" style="padding: 6px 10px; border: 1px solid #2196F3; border-radius: 4px; background: #f7fafd; color: #333; font-size: 15px; font-family: inherit; width: 300px;">
+                    </div>
+                    <progress id="uploadProgress" value="0" max="100" style="width:180px; height: 16px; border-radius: 8px; background: #e3f2fd; color: #2196F3; display:none;"></progress>
+                    <button id="cancelUpgradeBtn" type="button" onclick="cancelUpgrade()" style="padding: 6px 12px; border: 1px solid #f44336; border-radius: 4px; background: #ffebee; color: #f44336; font-size: 15px; font-family: inherit; display:none;">取消升级</button>
+                </form>
+            </div>
+            <script>
+                function toggleUpdateMethod() {
+                    const method = document.querySelector('input[name="updateMethod"]:checked').value;
+                    document.getElementById('fileUploadContainer').style.display = method === 'file' ? 'block' : 'none';
+                    document.getElementById('urlInputContainer').style.display = method === 'url' ? 'block' : 'none';
+                    document.getElementById('updateFile').required = method === 'file';
+                }
+            </script>
             <div id="updateStatus" style="margin: 10px 0; padding: 10px; border-radius: 4px; display: none;"></div>
             <button onclick="updateSystem()">更新系统</button>
             <button onclick="rebootSystem()">重启系统</button>

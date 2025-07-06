@@ -53,7 +53,7 @@ async function updateSystem() {
             resetUpgradeStatus();
         }
     } else {
-        // URL方式升级（保持原有逻辑）
+        // URL方式升级
         const url = document.getElementById('updateUrl')?.value;
         if (!url) {
             updateStatusDisplay('请选择升级包或输入URL', 0, 'error');
@@ -61,8 +61,18 @@ async function updateSystem() {
         }
         
         try {
-            updateStatusDisplay('开始远程升级...', 'info');
-            const response = await authFetch('/update', {
+            // 重置状态
+            resetUpgradeStatus();
+            upgradeStatus.upgrading = true;
+            updateStatusDisplay('开始下载远程升级包...', 0, 'info');
+            
+            // 显示进度条
+            const progressBar = document.getElementById('uploadProgress');
+            progressBar.style.display = 'inline-block';
+            progressBar.value = 0;
+            
+            // 发送URL下载请求
+            const response = await authFetch('/upload_update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url })
@@ -70,15 +80,21 @@ async function updateSystem() {
             
             if (!response.ok) throw new Error('请求失败');
             
+            // 开始监控升级进度
             await pollUpgradeProgress();
-            updateStatusDisplay('系统升级完成！', 0, 'success');
-            alert('系统升级完成');
+            // updateStatusDisplay('系统升级完成！', 100, 'success');
+            // alert('系统升级完成');
         } catch (error) {
             updateStatusDisplay(`系统升级失败: ${error.message}`, 0, 'error');
             alert(`系统升级失败: ${error.message}`);
+        } finally {
+            document.getElementById('uploadProgress').style.display = 'none';
+            resetUpgradeStatus();
         }
     }
 }
+let cancelController = null;
+
 function getAuthToken() {
     // 从localStorage获取令牌
     return localStorage.getItem('authToken') || '';
@@ -87,7 +103,11 @@ function getAuthToken() {
     // return document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] || '';
 }
 // 文件上传函数（封装XHR）
+// 文件上传函数（封装XHR）
 async function uploadFile(formData) {
+    // 创建新的AbortController用于本次上传
+    cancelController = new AbortController();
+    
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         
@@ -100,6 +120,7 @@ async function uploadFile(formData) {
         };
 
         xhr.onload = () => {
+            cancelController = null; // 清理
             if (xhr.status === 200) {
                 try {
                     const resp = JSON.parse(xhr.responseText);
@@ -116,8 +137,21 @@ async function uploadFile(formData) {
             }
         };
 
-        xhr.onerror = () => reject(new Error("网络错误"));
-        
+        xhr.onerror = () => {
+            cancelController = null; // 清理
+            reject(new Error("网络错误"));
+        };
+
+        xhr.onabort = () => {
+            cancelController = null; // 清理
+            reject(new Error("上传已取消"));
+        };
+
+        // 绑定中止信号
+        cancelController.signal.addEventListener('abort', () => {
+            xhr.abort();
+        });
+
         xhr.open("POST", "/upload_update", true);
         xhr.setRequestHeader("Authorization", getAuthToken());
         xhr.send(formData);
@@ -173,17 +207,51 @@ async function pollUpgradeProgress() {
 // 更新状态显示
 function updateStatusDisplay(message, progress, type) {
     const progressBar = document.getElementById('uploadProgress');
-    progressBar.style.display = 'inline-block';
-    progressBar.value = progress;
+    const cancelBtn = document.getElementById('cancelUpgradeBtn');
+    
+    // 控制进度条和取消按钮显示
+    if (type === 'info' && (message.includes('上传') || message.includes('下载') || message.includes('安装'))) {
+        progressBar.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    } else {
+        progressBar.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    }
+    
+    progressBar.value = Number.isFinite(progress) ? progress : 0;
     const statusElement = document.getElementById('updateStatus');
     if (!statusElement) return;
     
-    statusElement.textContent = message + (progress < 100 ? ` (${progress}%)` : '');
+    const progressText = Number.isFinite(progress) ? ` (${progress}%)` : '';
+    statusElement.textContent = message + progressText;
     statusElement.style.display = 'block';
     statusElement.className = `status-${type}`;
     
     // 记录当前状态
     upgradeStatus.status = message;
+}
+
+// 取消升级
+async function cancelUpgrade() {
+    try {
+        const response = await authFetch('/cancel_upgrade', {
+            method: 'POST'
+        });
+        
+        if (!response.ok) throw new Error('取消请求失败');
+        
+        const result = await response.json();
+        if (result.status === 'cancelled') {
+            updateStatusDisplay('升级已取消', 0, 'info');
+            setTimeout(() => {
+                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('cancelUpgradeBtn').style.display = 'none';
+            }, 2000);
+         cancelController.abort();
+        }
+    } catch (error) {
+        updateStatusDisplay(`取消失败: ${error.message}`, 0, 'error');
+    }
 }
 
 // 重置升级状态

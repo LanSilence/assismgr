@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,8 +20,8 @@ var users = map[string]string{
 
 // JWT 配置
 var (
-	jwtSecret = []byte("your-secret-key") // 生产环境应从安全配置读取
-	tokenExp  = time.Hour * 1             // Token 有效期
+	jwtSecret []byte           // 生产环境应从安全配置读取
+	tokenExp  = time.Hour * 10 // Token 有效期
 )
 
 // 登录请求结构体
@@ -38,7 +41,45 @@ type ProfileResponse struct {
 	Message  string `json:"message"`
 }
 
+func keygen() []byte {
+	key := make([]byte, 32) // 256位密钥
+
+	// 从加密安全的随机源读取随机数据
+	_, err := rand.Read(key)
+	if err != nil {
+		panic("failed to generate random key: " + err.Error())
+	}
+	return key
+}
+
 func initLogin() {
+	// 初始化密钥
+	// 初始化密钥
+	keyPath := "/mnt/data/assismgr-key"
+
+	// 检查文件是否存在
+	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+		// 文件不存在，创建新密钥
+		jwtSecret = keygen()
+
+		// 创建文件并设置权限为600（只有所有者可读写）
+		err := os.WriteFile(keyPath, jwtSecret, 0600)
+		if err != nil {
+			log.Fatalf("Failed to create JWT key file: %v", err)
+		}
+	} else {
+		// 文件已存在，读取密钥
+		var err error
+		jwtSecret, err = os.ReadFile(keyPath)
+		if err != nil {
+			log.Fatalf("Failed to read JWT key file: %v", err)
+		}
+
+		// 检查密钥是否有效
+		if len(jwtSecret) == 0 {
+			log.Fatal("JWT key file is empty")
+		}
+	}
 	// 注册路由
 	http.HandleFunc("/login", loginHandler)
 }
