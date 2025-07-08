@@ -62,6 +62,38 @@ func HaPerMonitor(configPath string) {
 			break
 		}
 	}
+	client.RegisterSensor(
+		hamqtt.SensorEntity{
+			Name:              "disk_usage",
+			Description:       "Disk Usage",
+			DeviceClass:       "data_size",
+			UnitOfMeasurement: "GB",
+			ValueTemplate:     "value_json.usage",
+		},
+		nil, // no command handler
+		func() interface{} {
+			return getDiskUsage() // return current sensor value
+		})
+	client.RegisterSensor(
+		hamqtt.SensorEntity{
+			Name:              "disk_total",
+			Description:       "Disk Total",
+			DeviceClass:       "data_size",
+			UnitOfMeasurement: "GB",
+			ValueTemplate:     "value_json.total",
+		},
+		nil, // no command handler
+		nil)
+	client.RegisterSensor(
+		hamqtt.SensorEntity{
+			Name:              "disk_free",
+			Description:       "Disk Free",
+			DeviceClass:       "data_size",
+			UnitOfMeasurement: "GB",
+			ValueTemplate:     "value_json.free",
+		},
+		nil, // no command handler
+		nil)
 	defer client.Stop()
 	fmt.Println("连接成功，开始上报系统信息...")
 

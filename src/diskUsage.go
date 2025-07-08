@@ -10,21 +10,22 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 )
 
-func main() {
+func getDiskUsage() map[string]float64 {
 	mountPoint := "/mnt/data" // 替换为你的挂载点
 
+	diskUage := make(map[string]float64)
 	// 获取磁盘使用情况
 	usage, err := disk.Usage(mountPoint)
 	if err != nil {
 		fmt.Printf("获取磁盘信息失败: %v\n", err)
-		return
+		return nil
 	}
 
 	// 获取 / 挂载点对应的设备
 	partitions, err := disk.Partitions(false)
 	if err != nil {
 		fmt.Printf("获取分区信息失败: %v\n", err)
-		return
+		return nil
 	}
 	var device string
 	for _, p := range partitions {
@@ -35,7 +36,7 @@ func main() {
 	}
 	if device == "" {
 		fmt.Println("未找到挂载点对应的设备")
-		return
+		return nil
 	}
 
 	// 使用 lsblk -no pkname 获取物理磁盘名
@@ -43,7 +44,7 @@ func main() {
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("lsblk 命令执行失败: %v\n", err)
-		return
+		return nil
 	}
 	phyDisk := "/dev/" + string(output)
 	phyDisk = phyDisk[:len(phyDisk)-1] // 去掉换行
@@ -53,21 +54,26 @@ func main() {
 	data, err := os.ReadFile(sizePath)
 	if err != nil {
 		fmt.Printf("读取物理磁盘大小失败: %v\n", err)
-		return
+		return nil
 	}
 	sectorsStr := strings.TrimSpace(string(data))
 	sectors, err := strconv.ParseUint(sectorsStr, 10, 64)
 	if err != nil {
 		fmt.Printf("解析磁盘扇区数失败: %v\n", err)
-		return
+		return nil
 	}
 	totalBytes := sectors * 512
-	fmt.Printf("物理磁盘 %s 总空间: %s\n", phyDisk, formatBytes(totalBytes))
-	fmt.Printf("已用空间: %s\n", formatBytes(totalBytes-usage.Free))
-	fmt.Printf("剩余空间: %s\n", formatBytes(usage.Free))
+	fmt.Printf("物理磁盘 %s 总空间: %s\n", phyDisk, formatDiskBytes(totalBytes))
+	fmt.Printf("已用空间: %s\n", formatDiskBytes(totalBytes-usage.Free))
+	fmt.Printf("剩余空间: %s\n", formatDiskBytes(usage.Free))
+
+	diskUage["total"] = float64(totalBytes) / 1073741824
+	diskUage["usage"] = float64(totalBytes-usage.Free) / 1073741824
+	diskUage["free"] = float64(usage.Free) / 1073741824
+	return diskUage
 }
 
-func formatBytes(bytes uint64) string {
+func formatDiskBytes(bytes uint64) string {
 	switch {
 	case bytes < 1024:
 		return fmt.Sprintf("%dB", bytes)
