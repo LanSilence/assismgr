@@ -18,7 +18,6 @@ import (
 	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
 )
 
@@ -106,8 +105,10 @@ func getSystemInfo() SystemInfo {
 	memPercent = float64(mem.Used) / float64(mem.Total) * 100
 
 	// Disk
-	disks, _ := disk.Usage("/")
-	diskPercent = float64(disks.Used) / float64(disks.Total) * 100
+	disks := getDiskUsage()
+	if disks != nil {
+		diskPercent = float64(disks["usage"]) / float64(disks["total"]) * 100
+	}
 
 	return SystemInfo{
 		CPUUsage:  cpuPercent,
