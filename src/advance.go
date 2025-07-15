@@ -93,7 +93,7 @@ func cancelUpgradeHandler(w http.ResponseWriter, r *http.Request) {
 
 // 重启系统
 func rebootSystem(w http.ResponseWriter, r *http.Request) {
-	cmd := exec.Command("sudo", "reboot")
+	cmd := exec.Command("reboot")
 	err := cmd.Run()
 	if err != nil {
 		log.Printf("系统重启失败: %v\n", err)

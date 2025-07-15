@@ -51,7 +51,8 @@ func HaPerMonitor(configPath string) {
 		ClientID: cfg.ClientID,
 	}
 	var client *hamqtt.MQTTClient
-	for i := 0; i < 3; i++ {
+	var i int
+	for i = 0; i < 5; i++ {
 		client, err = hamqtt.NewMQTTClient(mqttCfg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "MQTT连接失败: %v\n", err)
@@ -61,6 +62,10 @@ func HaPerMonitor(configPath string) {
 			fmt.Println("MQTT连接成功")
 			break
 		}
+	}
+	if i >= 5 {
+		fmt.Println("MQTT连接失败，退出连接")
+		return
 	}
 	client.RegisterSensor(
 		hamqtt.SensorEntity{

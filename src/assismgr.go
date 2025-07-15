@@ -193,15 +193,36 @@ func formatBytes(bytes uint64) string {
 
 var isOnlineStatus bool
 
+func checkPingisSimple() bool {
+	cmd := exec.Command("ping", "-V")
+	_, err := cmd.Output()
+	if err != nil {
+		log.Println("ping is Simple")
+		return true
+	}
+	return false
+}
 func checkInternet() {
-	for {
+	// var pingArgs string
+	isSimple := checkPingisSimple()
 
-		cmd := exec.Command("ping", "-c", "1", "www.baidu.com")
+	// if isSimple {
+	// 	pingArgs = "www.baidu.com"
+	// } else {
+	// 	pingArgs = " -c 1 www.baidu.com"
+	// }
+	for {
+		var cmd *exec.Cmd
+		if isSimple {
+			cmd = exec.Command("ping", "www.baidu.com")
+		} else {
+			cmd = exec.Command("ping", "-c", "1", "-W", "1", "www.baidu.com")
+		}
 		err := cmd.Run()
 		if err == nil {
 			isOnlineStatus = true
 		} else {
-			log.Println("ping fail, DNS error")
+			log.Println("ping fail, DNS error:", err.Error())
 			isOnlineStatus = false
 		}
 		time.Sleep(time.Second * 4)
