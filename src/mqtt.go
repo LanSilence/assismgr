@@ -52,18 +52,18 @@ func HaPerMonitor(configPath string) {
 	}
 	var client *hamqtt.MQTTClient
 	var i int
-	for i = 0; i < 5; i++ {
+	for i = 0; i < 20; i++ {
 		client, err = hamqtt.NewMQTTClient(mqttCfg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "MQTT连接失败: %v\n", err)
-			time.Sleep(2 * time.Second)
+			time.Sleep(10 * time.Second)
 			continue
 		} else {
 			fmt.Println("MQTT连接成功")
 			break
 		}
 	}
-	if i >= 5 {
+	if i >= 20 {
 		fmt.Println("MQTT连接失败，退出连接")
 		return
 	}
