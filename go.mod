@@ -15,8 +15,8 @@ require (
 )
 
 require (
-	github.com/LanSilence/hamqtt v0.2.5
-	github.com/eclipse/paho.mqtt.golang v1.5.0 // indirect
+	github.com/LanSilence/hamqtt v0.2.6
+	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
