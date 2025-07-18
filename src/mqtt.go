@@ -99,6 +99,7 @@ func resigterLed(ledName string, client *hamqtt.MQTTClient) {
 			LED_MODE_HEARTBEAT, // 心跳
 			LED_MODE_SLOW,      // 慢闪
 			LED_MODE_FAST,      // 快闪
+			LED_MODE_DEFAULT,   // 默认状态
 		},
 	}
 	client.RegisterSensor(

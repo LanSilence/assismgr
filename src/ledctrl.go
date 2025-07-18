@@ -215,6 +215,7 @@ const (
 	LED_MODE_HEARTBEAT = "heartbeat"
 	LED_MODE_SLOW      = "slow"
 	LED_MODE_FAST      = "fast"
+	LED_MODE_DEFAULT   = "default" // 默认状态
 )
 
 var ledStatusMap = map[int]string{
